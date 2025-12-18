@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
+import pickle
 
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
@@ -25,8 +26,8 @@ df = pd.read_csv("insurance.csv")
 print("Dataset Info:")
 print(f"Shape: {df.shape}")
 print(f"Columns: {df.columns.tolist()}")
-print(f"\nTarget variable statistics:")
-print(df['charges'].describe())
+print(f"\nInsurance Charges (first 10 records):")
+print(df['charges'].head(10).tolist())
 
 # Preprocessing
 df['sex'] = df['sex'].map({'male': 0, 'female': 1})
@@ -147,3 +148,58 @@ results = results.sort_values('RMSE')
 print(results.to_string(index=False, float_format='%.2f'))
 
 print(f"\nBest Model: {results.iloc[0]['Model']} with RMSE of ${results.iloc[0]['RMSE']:,.2f}")
+
+# Demonstrate predictions for new customers
+print("\n" + "="*50)
+print("SAMPLE PREDICTIONS FOR NEW CUSTOMERS")
+print("="*50)
+
+# Example customers (age, sex, bmi, children, smoker, region_northwest, region_southeast, region_southwest)
+sample_customers = [
+    [25, 0, 25.0, 0, 0, 1, 0, 0],  # Young male, normal BMI, non-smoker, northwest
+    [45, 1, 30.0, 2, 1, 0, 1, 0],  # Middle-aged female, overweight, smoker, southeast
+    [35, 0, 22.0, 1, 0, 0, 0, 1],  # Male, healthy BMI, non-smoker, southwest
+]
+
+customer_descriptions = [
+    "25yr old male, BMI 25, no kids, non-smoker, northwest",
+    "45yr old female, BMI 30, 2 kids, smoker, southeast", 
+    "35yr old male, BMI 22, 1 kid, non-smoker, southwest"
+]
+
+# Scale the sample data
+sample_scaled = scaler.transform(sample_customers)
+
+# Predict using the best model (Random Forest)
+predictions = rf.predict(sample_customers)
+
+for i, (desc, pred) in enumerate(zip(customer_descriptions, predictions)):
+    print(f"Customer {i+1}: {desc}")
+    print(f"Predicted Insurance Charge: ${pred:,.2f}")
+    print()
+
+# Save the trained models
+print("\n" + "="*50)
+print("SAVING TRAINED MODELS")
+print("="*50)
+
+# Save Random Forest (best model) as .pkl
+with open('best_model_random_forest.pkl', 'wb') as f:
+    pickle.dump(rf, f)
+print("✅ Random Forest model saved as 'best_model_random_forest.pkl'")
+
+# Save Linear Regression as .pkl
+with open('linear_regression_model.pkl', 'wb') as f:
+    pickle.dump(lr, f)
+print("✅ Linear Regression model saved as 'linear_regression_model.pkl'")
+
+# Save ANN as .h5
+ann.save('ann_model.h5')
+print("✅ ANN model saved as 'ann_model.h5'")
+
+# Save scaler for future predictions
+with open('scaler.pkl', 'wb') as f:
+    pickle.dump(scaler, f)
+print("✅ Scaler saved as 'scaler.pkl'")
+
+print("\n🎉 All models saved successfully!")
