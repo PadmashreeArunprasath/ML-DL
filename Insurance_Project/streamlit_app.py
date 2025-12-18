@@ -2,22 +2,19 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import pickle
-from sklearn.preprocessing import StandardScaler
 
-# Load the trained model and scaler
+# Load the trained model
 @st.cache_resource
 def load_model():
     try:
         with open("best_model_random_forest.pkl", "rb") as f:
             model = pickle.load(f)
-        with open("scaler.pkl", "rb") as f:
-            scaler = pickle.load(f)
-        return model, scaler
+        return model
     except FileNotFoundError:
         st.error("Model files not found! Please run Insurance.py first to train and save models.")
-        return None, None
+        return None
 
-model, scaler = load_model()
+model = load_model()
 
 st.title("🏥 Insurance Premium Prediction")
 st.write("Enter your personal details to predict your insurance premium.")
