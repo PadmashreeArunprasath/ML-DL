@@ -23,14 +23,43 @@ def load_data():
         return None
 
 @st.cache_resource
-def load_model():
+def load_or_train_model():
     try:
+        # Try to load existing model
         with open("best_model_random_forest.pkl", "rb") as f:
             model = pickle.load(f)
         return model
     except FileNotFoundError:
-        st.error("Model files not found! Please run Insurance.py first to train and save models.")
-        return None
+        # If model doesn't exist, train it automatically
+        st.info("Training models for the first time... This may take a moment.")
+        
+        # Load and preprocess data
+        df = pd.read_csv("insurance.csv")
+        df['sex'] = df['sex'].map({'male': 0, 'female': 1})
+        df['smoker'] = df['smoker'].map({'no': 0, 'yes': 1})
+        df = pd.get_dummies(df, columns=['region'], drop_first=True)
+        
+        X = df.drop('charges', axis=1)
+        y = df['charges']
+        
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+        
+        # Train Random Forest model
+        rf = RandomForestRegressor(n_estimators=200, max_depth=10, random_state=42)
+        rf.fit(X_train, y_train)
+        
+        # Save the trained model
+        with open("best_model_random_forest.pkl", "wb") as f:
+            pickle.dump(rf, f)
+        
+        # Train and save scaler for other models
+        scaler = StandardScaler()
+        scaler.fit(X_train)
+        with open("scaler.pkl", "wb") as f:
+            pickle.dump(scaler, f)
+        
+        st.success("Models trained and saved successfully!")
+        return rf
 
 @st.cache_data
 def create_visualizations():
@@ -108,7 +137,7 @@ def create_visualizations():
     return fig1, fig2
 
 df = load_data()
-model = load_model()
+model = load_or_train_model()
 
 st.title("🏥 Insurance Premium Prediction")
 
